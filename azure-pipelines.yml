@@ -1,0 +1,63 @@
+trigger:
+  - main
+
+pr:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+
+- stage: BuildAndPush
+  displayName: 'Docker Build & Push to ACR'
+  jobs:
+  - job: BuildAndPushJob
+    displayName: 'Build and Conditionally Push'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Verify Login and Build Container'
+      inputs:
+        azureSubscription: 'azure-rm-conn'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        addSpnToEnvironment: true # <-- ДОДАНО: дозволяє обійти жорстку прив'язку до підписки
+        inlineScript: |
+          az acr login --name crdotnetapp001
+          docker build \
+            -t crdotnetapp001.azurecr.io/bestrong-api:$(Build.BuildId) \
+            -t crdotnetapp001.azurecr.io/bestrong-api:latest .
+
+    - task: AzureCLI@2
+      displayName: 'Push to ACR (Only for main branch)'
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+      inputs:
+        azureSubscription: 'azure-rm-conn'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        addSpnToEnvironment: true
+        inlineScript: |
+          az acr login --name crdotnetapp001
+          docker push crdotnetapp001.azurecr.io/bestrong-api:$(Build.BuildId)
+          docker push crdotnetapp001.azurecr.io/bestrong-api:latest
+
+- stage: Deploy
+  displayName: 'Deploy to Azure Web App'
+  dependsOn: BuildAndPush
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: DeployJob
+    displayName: 'Update Web App Container'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Update Container via Azure CLI Command'
+      inputs:
+        azureSubscription: 'azure-rm-conn'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        addSpnToEnvironment: true # <-- ДОДАНО
+        inlineScript: |
+          az webapp config container set \
+            --name app-dotnetapp-001 \
+            --resource-group dotnet-rg \
+            --docker-custom-image-name crdotnetapp001.azurecr.io/bestrong-api:$(Build.BuildId)
