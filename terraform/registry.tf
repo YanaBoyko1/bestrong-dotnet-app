@@ -5,9 +5,9 @@ resource "azurerm_container_registry" "acr" {
   sku                   = "Premium"
   data_endpoint_enabled = false
 
-  public_network_access_enabled = false
+  public_network_access_enabled = true
+  admin_enabled                 = true 
 }
-
 resource "azurerm_role_assignment" "app_acr_pull" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
