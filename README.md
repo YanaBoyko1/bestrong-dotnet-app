@@ -74,6 +74,8 @@ The following endpoints are available:
 - `POST /api/Movies`: Adds a new movie.
 - `PUT /api/Movies/{id}`: Updates an existing movie.
 - `DELETE /api/Movies/{id}`: Deletes a specific movie.
+<img width="911" height="440" alt="image" src="https://github.com/user-attachments/assets/a63176e5-77b0-449c-b9cf-955fe946e51a" />
+
 
 ## License
 
