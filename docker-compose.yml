@@ -1,0 +1,17 @@
+services:
+  app:
+    image: bestrong-dotnet-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bestrong_app
+
+    ports:
+      - 5000:8080
+    
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    
+    restart: on-failure
+  
+
